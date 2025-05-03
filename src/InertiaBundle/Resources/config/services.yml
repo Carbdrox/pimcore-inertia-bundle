@@ -1,0 +1,57 @@
+services:
+    _defaults:
+        autowire: true
+        autoconfigure: true
+        public: false
+
+    inertia.service:
+        class: InertiaBundle\Service\Inertia
+        public: false
+        arguments:
+            $engine: '@twig'
+            $requestStack: '@request_stack'
+            $container: '@service_container'
+            $serializer: '@serializer'
+
+    InertiaBundle\Service\Inertia: '@inertia.service'
+
+    inertia.gateway:
+        class: InertiaBundle\Support\SsrGateway
+        arguments:
+            $httpClient: '@Symfony\Contracts\HttpClient\HttpClientInterface'
+            $inertia: '@inertia.service'
+
+    inertia.twig_extension:
+        class: InertiaBundle\Twig\InertiaExtension
+        public: false
+        arguments:
+            $inertia: '@inertia.service'
+            $gateway: '@inertia.gateway'
+        tags:
+            - { name: twig.extension }
+
+    InertiaBundle\EventSubscriber\InertiaSubscriber:
+        tags:
+            - { name: kernel.event_listener, event: kernel.request }
+            - { name: kernel.event_listener, event: kernel.response }
+        arguments:
+            $inertia: '@inertia.service'
+            $csrfTokenManager: '@security.csrf.token_manager'
+            $debug: '%kernel.debug%'
+            $container: '@service_container'
+
+    InertiaBundle\EventSubscriber\InertiaAttributeSubscriber:
+        tags:
+            - { name: kernel.event_listener, event: kernel.view }
+        arguments:
+            $inertia: '@inertia.service'
+
+    InertiaBundle\Command\InertiaStartSsr:
+        class: InertiaBundle\Command\InertiaStartSsr
+        tags: [ 'console.command' ]
+
+    InertiaBundle\Command\InertiaStopSsr:
+        class: InertiaBundle\Command\InertiaStopSsr
+        tags: [ 'console.command' ]
+        calls:
+            - setContainer: [ '@service_container' ]

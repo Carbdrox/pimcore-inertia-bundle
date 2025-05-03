@@ -1,0 +1,36 @@
+{
+  "name": "carbdrox/pimcore-inertia-bundle",
+  "version": "0.1.0",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Christian Förster",
+      "email": "github@foerster.dev",
+      "role": "Developer"
+    }
+  ],
+  "type": "pimcore-bundle",
+  "description": "Pimcore Inertia integration",
+  "readme": "README.md",
+  "keywords": [
+    "pimcore",
+    "inertia",
+    "inertia-bundle"
+  ],
+  "autoload": {
+    "psr-4": {
+      "InertiaBundle\\": "src/InertiaBundle"
+    }
+  },
+  "require": {
+    "pimcore/pimcore": ">=10.0 <13.0",
+    "symfony/http-client": "^7.2"
+  },
+  "extra": {
+    "pimcore": {
+      "bundles": [
+        "InertiaBundle\\InertiaBundle"
+      ]
+    }
+  }
+}
