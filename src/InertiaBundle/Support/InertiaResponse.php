@@ -5,10 +5,10 @@ namespace InertiaBundle\Support;
 use Attribute;
 
 #[Attribute(Attribute::TARGET_METHOD)]
-class InertiaAttribute
+class InertiaResponse
 {
     public function __construct(
-        public string  $component,
+        public ?string $component = null,
         public array   $props = [],
         public array   $viewData = [],
         public array   $context = [],

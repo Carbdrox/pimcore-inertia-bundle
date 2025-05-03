@@ -23,7 +23,7 @@ class Inertia
 
     protected array $viewData = [];
 
-    protected array $contextData = [];
+    protected array $context = [];
 
     protected bool $ssr = false;
 
@@ -72,7 +72,7 @@ class Inertia
         $this->ssrUrl = $url;
     }
 
-    public function getShare(?string $key = null): mixed
+    public function getShared(?string $key = null): mixed
     {
         return null === $key ? $this->props : ($this->props[$key] ?? null);
     }
@@ -87,19 +87,19 @@ class Inertia
         return null === $key ? $this->viewData : ($this->viewData[$key] ?? null);
     }
 
-    public function viewData(string $key, mixed $value = null): void
+    public function setViewData(string $key, mixed $value = null): void
     {
         $this->viewData[$key] = $value;
     }
 
     public function getContext(?string $key = null): mixed
     {
-        return null === $key ? $this->contextData : ($this->contextData[$key] ?? null);
+        return null === $key ? $this->context : ($this->context[$key] ?? null);
     }
 
-    public function context(string $key, mixed $value = null): void
+    public function setContext(string $key, mixed $value = null): void
     {
-        $this->contextData[$key] = $value;
+        $this->context[$key] = $value;
     }
 
     public function getVersion(): ?string
@@ -137,7 +137,7 @@ class Inertia
         }
 
         $request = $this->requestStack->getCurrentRequest();
-        $context = array_merge($this->contextData, $context);
+        $context = array_merge($this->context, $context);
         $viewData = array_merge($this->viewData, $viewData);
         $props = array_merge($this->props, $props);
         $url = $url ?? $request->getRequestUri();
