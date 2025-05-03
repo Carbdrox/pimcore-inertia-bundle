@@ -11,7 +11,6 @@ use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
 class InertiaAttributeSubscriber implements EventSubscriberInterface
 {
-
     public function __construct(protected Inertia $inertia)
     {
     }
@@ -31,26 +30,53 @@ class InertiaAttributeSubscriber implements EventSubscriberInterface
             return;
         }
 
-        if (!($attribute = $event->controllerArgumentsEvent?->getAttributes(InertiaResponse::class)[0] ?? null)) {
+        [$controller, $methodName] = $event->controllerArgumentsEvent?->getController() ?? [null, null];
+
+        if (!$controller || !$methodName) {
             return;
         }
 
-        if (!$attribute->component) {
-            [$controller, $methodName] = $event->controllerArgumentsEvent->getController();
+        $reflection = new ReflectionClass($controller);
+        $classAttribute = $reflection->getAttributes(InertiaResponse::class)[0] ?? null;
+        $methodAttribute = $reflection->getMethod($methodName)->getAttributes(InertiaResponse::class)[0] ?? null;
 
-            if (!$controller || !$methodName) {
-                return;
-            }
-
-            $attribute->component = $this->guessInertiaComponentName($controller, $methodName);
-            $parameters = array_merge($attribute->props, $parameters);
+        if (!$classAttribute && !$methodAttribute) {
+            return;
         }
 
+        $classInertiaResponse = $classAttribute?->newInstance() ?: new InertiaResponse();
+        $methodInertiaResponse = $methodAttribute?->newInstance() ?: new InertiaResponse();
+
+        $component = $this->resolveComponent($classInertiaResponse, $methodInertiaResponse, $controller, $methodName);
+        $props = array_merge($classInertiaResponse->props, $methodInertiaResponse->props, $parameters);
+        $viewData = array_merge($classInertiaResponse->viewData, $methodInertiaResponse->viewData);
+        $context = array_merge($classInertiaResponse->context, $methodInertiaResponse->context);
+        $url = $methodInertiaResponse->url ?? $classInertiaResponse->url;
+
         $event->setResponse(
-            $this
-                ->inertia
-                ->render($attribute->component, $parameters, $attribute->viewData, $attribute->context, $attribute->url)
+            $this->inertia->render($component, $props, $viewData, $context, $url)
         );
+    }
+
+    protected function resolveComponent(InertiaResponse $classResponse, InertiaResponse $methodResponse, $controller, string $methodName): string
+    {
+
+        if ($methodResponse->component) {
+            return vsprintf('%s%s%s', [
+                $classResponse->component ?? '',
+                $classResponse->component ? '/' : '',
+                $methodResponse->component
+            ]);
+        }
+
+        if ($classResponse->component) {
+            return vsprintf('%s/%s', [
+                $classResponse->component,
+                lcfirst($methodName)
+            ]);
+        }
+
+        return $this->guessInertiaComponentName($controller, $methodName);
     }
 
     protected function guessInertiaComponentName(mixed $controller, string $methodName): string
