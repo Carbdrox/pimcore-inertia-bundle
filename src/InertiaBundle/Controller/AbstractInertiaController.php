@@ -2,20 +2,43 @@
 
 namespace InertiaBundle\Controller;
 
+use ReflectionClass;
+use RuntimeException;
 use InertiaBundle\Service\Inertia;
+use InertiaBundle\Support\InertiaAreabrick;
+use InertiaBundle\Service\AreabrickRenderer;
+use Symfony\Component\HttpFoundation\Response;
+use Pimcore\Http\Request\Resolver\DocumentResolver;
+use Pimcore\Http\Request\Resolver\EditmodeResolver;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
-use Symfony\Component\HttpFoundation\Response;
 
 abstract class AbstractInertiaController extends AbstractController
 {
-    protected Inertia $inertia;
-    protected ParameterBagInterface $params;
 
-    public function __construct(Inertia $inertia, ParameterBagInterface $params)
+    protected array $bricks = [];
+
+    public function __construct(
+        protected Inertia $inertia,
+        protected ParameterBagInterface $params,
+        protected DocumentResolver $documentResolver,
+        protected EditmodeResolver $editmodeResolver,
+        protected AreabrickRenderer $areabrickRenderer
+    )
     {
-        $this->inertia = $inertia;
-        $this->params = $params;
+    }
+
+    public function __get(string $name)
+    {
+        if ('document' === $name) {
+            return $this->documentResolver->getDocument();
+        }
+
+        if ('editmode' === $name) {
+            return $this->editmodeResolver->isEditmode();
+        }
+
+        throw new RuntimeException(sprintf('Trying to read undefined property "%s"', $name));
     }
 
     protected function share(string $key, $value): void
@@ -57,6 +80,62 @@ abstract class AbstractInertiaController extends AbstractController
     {
         return $this->inertia->render($component, $props, $viewData, $context, $url);
     }
+
+    protected function getAreablockData(null|string|array $identifier = null): array {
+        return match (true) {
+            is_string($identifier) => [$this->areabrickRenderer->getAreablockData($identifier)],
+            is_array($identifier) => array_map(fn ($name) => $this->areabrickRenderer->getAreablockData($name), $identifier),
+            default => []
+        };
+    }
+
+    protected function processInertiaAttribute(string $methodName): ?Response
+    {
+        $reflection = new ReflectionClass($this);
+        $method = $reflection->getMethod($methodName);
+        $attributes = $method->getAttributes(InertiaAreabrick::class);
+
+        if (empty($attributes)) {
+            return null;
+        }
+
+        $attribute = $attributes[0]->newInstance();
+
+        if (!($attribute->identifier ?? null)) {
+            return null;
+        }
+
+        $template = $attribute->editTemplate ?? 'default/edit_mode.html.twig';
+
+        if ($this->editmode) {
+            return $this->render(
+                $template,
+                [
+                    'document' => $this->document,
+                    'blocks' => is_array($attribute->identifier) ? $attribute->identifier : [$attribute->identifier],
+                ]
+            );
+        }
+
+        $this->bricks = $this->getAreablockData($attribute->identifier);
+        return null;
+    }
+
+    public function __call($method, $arguments): mixed
+    {
+        if (!method_exists($this, $method)) {
+            throw new \BadMethodCallException('Call to undefined method InertiaController::' . $method . '()');
+        }
+
+        $result = $this->processInertiaAttribute($method);
+
+        if ($result instanceof Response) {
+            return $result;
+        }
+
+        return call_user_func_array(array($this, $method), $arguments);
+    }
+
 }
 
 

@@ -15,6 +15,14 @@ services:
 
     InertiaBundle\Service\Inertia: '@inertia.service'
 
+    inertia.areabrick_renderer:
+        class: InertiaBundle\Service\AreabrickRenderer
+        public: false
+        arguments:
+            $documentResolver: '@Pimcore\Http\Request\Resolver\DocumentResolver'
+
+    InertiaBundle\Service\AreabrickRenderer: '@inertia.areabrick_renderer'
+
     inertia.gateway:
         class: InertiaBundle\Support\SsrGateway
         arguments:

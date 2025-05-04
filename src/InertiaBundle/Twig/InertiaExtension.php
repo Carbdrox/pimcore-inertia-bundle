@@ -22,7 +22,7 @@ class InertiaExtension extends AbstractExtension
     {
         return [
             new TwigFunction('inertia', [$this, 'inertiaResolver'], ['needs_context' => true]),
-            new TwigFunction('inertiaHead', [$this, 'inertiaHeadResolver'], ['needs_context' => true])
+            new TwigFunction('inertia_head', [$this, 'inertiaHeadResolver'], ['needs_context' => true])
         ];
     }
 
