@@ -3,6 +3,7 @@
 namespace InertiaBundle\Service;
 
 use Closure;
+use Pimcore\Model\Document\Editable\Input;
 use Twig\Environment;
 use Twig\Error\RuntimeError;
 use InertiaBundle\Support\LazyProp;
@@ -218,6 +219,30 @@ class Inertia
 
         return new LazyProp($callback);
     }
+
+    public function renderToString(string $component, array $props = []): string
+    {
+        $props = $this->convertPropsToSerializable($props);
+
+        return sprintf(
+            '<div data-inertia-component="%s" data-inertia-props="%s"></div>',
+            htmlspecialchars($component),
+            htmlspecialchars(json_encode($props))
+        );
+    }
+
+    private function convertPropsToSerializable(array $props): array
+    {
+
+        foreach ($props as &$prop) {
+            if ($prop instanceof Input) {
+                $prop = $prop->getData();
+            }
+        }
+
+        return $props;
+    }
+
 
     private function serialize(array $page, array $context = []): array
     {
