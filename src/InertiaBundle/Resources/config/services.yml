@@ -54,6 +54,12 @@ services:
         arguments:
             $inertia: '@inertia.service'
 
+    InertiaBundle\Command\InstallAssetsCommand:
+        class: InertiaBundle\Command\InstallAssetsCommand
+        arguments:
+            $kernel: '@kernel'
+        tags: [ 'console.command' ]
+
     InertiaBundle\Command\InertiaStartSsr:
         class: InertiaBundle\Command\InertiaStartSsr
         tags: [ 'console.command' ]
