@@ -9,16 +9,43 @@ use Symfony\Component\DependencyInjection\Loader\YamlFileLoader;
 
 class InertiaExtension extends Extension
 {
-    /**
-     * {@inheritdoc}
-     */
+
     public function load(array $configs, ContainerBuilder $container): void
     {
+        $configuration = new Configuration();
+        $config = $this->processConfiguration($configuration, $configs);
+        $this->buildParameters($container, $config);
+
         $loader = new YamlFileLoader(
             $container,
             new FileLocator(__DIR__ . '/../Resources/config')
         );
 
         $loader->load('services.yml');
+    }
+
+    private function buildParameters(ContainerBuilder $container, array $config): void
+    {
+        foreach ($config as $name => $value) {
+            if (!is_array($value)) {
+                $container->setParameter(
+                    vsprintf('%s.%s', [$this->getAlias(), $name]),
+                    $value
+                );
+                continue;
+            }
+
+            foreach ($value as $subName => $subValue) {
+                $container->setParameter(
+                    vsprintf('%s.%s.%s', [$this->getAlias(), $name, $subName]),
+                    $subValue
+                );
+            }
+        }
+    }
+
+    public function getAlias(): string
+    {
+        return 'inertia';
     }
 }

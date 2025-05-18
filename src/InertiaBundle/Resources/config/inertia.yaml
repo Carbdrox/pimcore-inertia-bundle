@@ -1,0 +1,18 @@
+parameters:
+    inertia:
+        root_view: 'default/inertia.html.twig'
+        admin:
+            split_view: true
+        ssr:
+            enabled: false
+            url: 'http://localhost:13714/render'
+        csrf:
+            enabled: false
+            header_name: 'X-XSRF-TOKEN'
+            cookie_name: 'XSRF-TOKEN'
+            expire: 0
+            path: '/'
+            domain: null
+            secure: false
+            raw: false
+            samesite: 'lax'
