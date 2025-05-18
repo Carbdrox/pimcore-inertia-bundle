@@ -3,7 +3,6 @@
 namespace InertiaBundle\Service;
 
 use Pimcore\Model\Document\Editable;
-use Pimcore\Model\Document\Editable\Input;
 use Pimcore\Model\Document\Editable\Areablock;
 use Pimcore\Http\Request\Resolver\DocumentResolver;
 
@@ -74,7 +73,8 @@ readonly class AreabrickRenderer
     protected function convertToSerializable(Editable $editable): mixed
     {
         return match (true) {
-            $editable instanceof Input => $editable->getData(),
+            $editable instanceof Editable\Input => $editable->getData(),
+            $editable instanceof Editable\Wysiwyg => $editable->getText(),
             default => $editable->getData(),
         };
     }

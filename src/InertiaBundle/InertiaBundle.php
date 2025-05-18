@@ -9,9 +9,6 @@ class InertiaBundle extends AbstractPimcoreBundle
 {
     use PackageVersionTrait;
 
-    /**
-     * @return string
-     */
     protected function getComposerPackageName(): string
     {
         return 'carbdrox/pimcore-inertia-bundle';

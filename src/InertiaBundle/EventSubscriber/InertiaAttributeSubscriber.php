@@ -58,7 +58,12 @@ class InertiaAttributeSubscriber implements EventSubscriberInterface
         );
     }
 
-    protected function resolveComponent(InertiaResponse $classResponse, InertiaResponse $methodResponse, $controller, string $methodName): string
+    protected function resolveComponent(
+        InertiaResponse $classResponse,
+        InertiaResponse $methodResponse,
+        $controller,
+        string $methodName
+    ): string
     {
 
         if ($methodResponse->component) {

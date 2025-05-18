@@ -76,7 +76,8 @@ abstract class AbstractInertiaController extends AbstractController
         array   $props = [],
         array   $viewData = [],
         array   $context = [],
-        ?string $url = null): Response
+        ?string $url = null
+    ): Response
     {
         return $this->inertia->render($component, $props, $viewData, $context, $url);
     }
@@ -124,7 +125,9 @@ abstract class AbstractInertiaController extends AbstractController
     public function __call($method, $arguments): mixed
     {
         if (!method_exists($this, $method)) {
-            throw new \BadMethodCallException('Call to undefined method InertiaController::' . $method . '()');
+            throw new \BadMethodCallException(
+                sprintf('Call to undefined method AbstractInertiaController::%s()', $method)
+            );
         }
 
         $result = $this->processInertiaAttribute($method);

@@ -63,3 +63,9 @@ services:
         tags: [ 'console.command' ]
         calls:
             - setContainer: [ '@service_container' ]
+
+    InertiaBundle\EventSubscriber\InertiaAdminListener:
+        arguments:
+            $container: '@service_container'
+        tags:
+            - { name: kernel.event_listener, event: pimcore.bundle_manager.paths.js, method: addJsPaths }
