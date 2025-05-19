@@ -12,6 +12,7 @@ use Pimcore\Http\Request\Resolver\DocumentResolver;
 use Pimcore\Http\Request\Resolver\EditmodeResolver;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
+use Symfony\Component\DependencyInjection\ContainerInterface as ServiceContainerInterface;
 
 abstract class AbstractInertiaController extends AbstractController
 {
@@ -23,7 +24,8 @@ abstract class AbstractInertiaController extends AbstractController
         protected ParameterBagInterface $params,
         protected DocumentResolver $documentResolver,
         protected EditmodeResolver $editmodeResolver,
-        protected AreabrickRenderer $areabrickRenderer
+        protected AreabrickRenderer $areabrickRenderer,
+        protected ServiceContainerInterface $serviceContainer,
     )
     {
     }
@@ -85,7 +87,7 @@ abstract class AbstractInertiaController extends AbstractController
     protected function getAreablockData(null|string|array $identifier = null): array {
         return match (true) {
             is_string($identifier) => [$this->areabrickRenderer->getAreablockData($identifier)],
-            is_array($identifier) => array_map(fn ($name) => $this->areabrickRenderer->getAreablockData($name), $identifier),
+            is_array($identifier) => array_map(fn ($name) => $this->areabrickRenderer->getAreablockData($name), array_keys($identifier)),
             default => []
         };
     }
@@ -106,14 +108,14 @@ abstract class AbstractInertiaController extends AbstractController
             return null;
         }
 
-        $template = $attribute->editTemplate ?? 'default/edit_mode.html.twig';
-
         if ($this->editmode) {
+            $template = $attribute->editTemplate ??
+                ($this->serviceContainer->getParameter('inertia.admin.edit_mode_template') ?? '@Inertia/edit_mode.html.twig');
             return $this->render(
                 $template,
                 [
                     'document' => $this->document,
-                    'blocks' => is_array($attribute->identifier) ? $attribute->identifier : [$attribute->identifier],
+                    'blocks' => is_string($attribute->identifier) ? [$attribute->identifier => []] : $attribute->identifier,
                 ]
             );
         }

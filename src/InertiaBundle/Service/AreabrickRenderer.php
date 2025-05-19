@@ -73,8 +73,15 @@ readonly class AreabrickRenderer
     protected function convertToSerializable(Editable $editable): mixed
     {
         return match (true) {
-            $editable instanceof Editable\Input => $editable->getData(),
-            $editable instanceof Editable\Wysiwyg => $editable->getText(),
+            $editable instanceof Editable\Input,
+            $editable instanceof Editable\Textarea,
+            $editable instanceof Editable\Wysiwyg,
+            $editable instanceof Editable\Numeric,
+            $editable instanceof Editable\Checkbox,
+            $editable instanceof Editable\Date,
+            $editable instanceof Editable\Select,
+            $editable instanceof Editable\Embed => $editable->getData(),
+            $editable instanceof Editable\Multiselect => $editable->getData() ?: [],
             default => $editable->getData(),
         };
     }

@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>EditMode</title>
+</head>
+
+<body>
+<div id="site">
+    {% for block, config in blocks %}
+        {{ pimcore_areablock(block, config) }}
+    {% endfor %}
+</div>
+
+{% if editmode %}
+    <script>
+        const notifyParentFrame = () => {
+            if (!window.parent || !window.parent.pimcoreEditmodePreviewUpdate) {
+                return
+            }
+
+            window.parent.pimcoreEditmodePreviewUpdate({{ document.getId() }});
+        }
+
+        const debounce = (callback, timeout) => {
+            let timeoutId;
+
+            return function() {
+                const context = this
+                const args = arguments;
+
+                clearTimeout(timeoutId);
+                timeoutId = setTimeout(function() {
+                    callback.apply(context, args);
+                }, timeout);
+            };
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+
+            if (window === window.top) {
+                //is not a Iframe
+                return
+            }
+
+            const debouncedNotify = debounce(notifyParentFrame, 500);
+
+            document.addEventListener('click', function(e) {
+
+                const editableHeaders = document.querySelectorAll('.pimcore_area_buttons');
+
+                for (let header of editableHeaders) {
+                    if (!header.contains(e.target)) {
+                        continue
+                    }
+
+                    debouncedNotify()
+                }
+            })
+
+            document.addEventListener('change', function(e) {
+                if (e.target.closest('[data-type="editable"]') ||
+                    e.target.closest('.pimcore_editable')) {
+                    debouncedNotify()
+                }
+            })
+
+            document.addEventListener('keyup', function(e) {
+                if (e.target.closest('[data-type="editable"]') ||
+                    e.target.closest('.pimcore_editable')) {
+                    debouncedNotify()
+                }
+            })
+
+            document.addEventListener('dragend', function() {
+                debouncedNotify()
+            })
+        })
+    </script>
+{% endif %}
+</body>
+</html>

@@ -12,7 +12,8 @@ class Configuration implements ConfigurationInterface
     public static $configTree = [
         'root_view' => 'default/inertia.html.twig',
         'admin' => [
-            'split_view' => true
+            'split_view' => true,
+            'edit_mode_template' => '@InertiaBundle/edit_mode.html.twig'
         ],
         'ssr' => [
             'enabled' => false,

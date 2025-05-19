@@ -22,6 +22,7 @@ services:
             $documentResolver: '@Pimcore\Http\Request\Resolver\DocumentResolver'
 
     InertiaBundle\Service\AreabrickRenderer: '@inertia.areabrick_renderer'
+    Symfony\Component\DependencyInjection\ContainerInterface: '@service_container'
 
     inertia.gateway:
         class: InertiaBundle\Support\SsrGateway

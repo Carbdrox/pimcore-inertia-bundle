@@ -16,6 +16,13 @@ class InertiaExtension extends Extension
         $config = $this->processConfiguration($configuration, $configs);
         $this->buildParameters($container, $config);
 
+        $this->loadConfiguration($container);
+
+        $this->registerTwigPaths($container);
+    }
+
+    private function loadConfiguration(ContainerBuilder $container): void
+    {
         $loader = new YamlFileLoader(
             $container,
             new FileLocator(__DIR__ . '/../Resources/config')
@@ -42,6 +49,19 @@ class InertiaExtension extends Extension
                 );
             }
         }
+    }
+
+    private function registerTwigPaths(ContainerBuilder $container): void
+    {
+        if (!$container->hasExtension('twig')) {
+            return;
+        }
+
+        $container->prependExtensionConfig('twig', [
+            'paths' => [
+                __DIR__ . '/../Resources/views' => 'InertiaBundle',
+            ]
+        ]);
     }
 
     public function getAlias(): string
