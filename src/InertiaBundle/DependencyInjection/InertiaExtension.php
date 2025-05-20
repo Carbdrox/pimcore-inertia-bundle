@@ -59,7 +59,7 @@ class InertiaExtension extends Extension
 
         $container->prependExtensionConfig('twig', [
             'paths' => [
-                __DIR__ . '/../Resources/views' => 'InertiaBundle',
+                __DIR__ . '/../Resources/views' => 'Inertia',
             ]
         ]);
     }
