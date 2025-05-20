@@ -5,13 +5,17 @@ namespace InertiaBundle\EventSubscriber;
 use ReflectionClass;
 use InertiaBundle\Service\Inertia;
 use InertiaBundle\Support\InertiaResponse;
+use InertiaBundle\Service\TranslationService;
 use Symfony\Component\HttpKernel\KernelEvents;
 use Symfony\Component\HttpKernel\Event\ViewEvent;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
 class InertiaAttributeSubscriber implements EventSubscriberInterface
 {
-    public function __construct(protected Inertia $inertia)
+    public function __construct(
+        protected Inertia $inertia,
+        protected TranslationService $translationService
+    )
     {
     }
 
@@ -48,9 +52,14 @@ class InertiaAttributeSubscriber implements EventSubscriberInterface
         $methodInertiaResponse = $methodAttribute?->newInstance() ?: new InertiaResponse();
 
         $component = $this->resolveComponent($classInertiaResponse, $methodInertiaResponse, $controller, $methodName);
-        $props = array_merge($classInertiaResponse->props, $methodInertiaResponse->props, $parameters);
         $viewData = array_merge($classInertiaResponse->viewData, $methodInertiaResponse->viewData);
         $context = array_merge($classInertiaResponse->context, $methodInertiaResponse->context);
+        $props = array_merge(
+            ['translations' => $this->translationService->getAllTranslations()],
+            $classInertiaResponse->props,
+            $methodInertiaResponse->props,
+            $parameters
+        );
         $url = $methodInertiaResponse->url ?? $classInertiaResponse->url;
 
         $event->setResponse(

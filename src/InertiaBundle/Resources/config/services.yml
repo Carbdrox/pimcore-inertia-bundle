@@ -39,6 +39,11 @@ services:
         tags:
             - { name: twig.extension }
 
+    InertiaBundle\Service\TranslationService:
+        arguments:
+            $translator: '@Pimcore\Translation\Translator'
+            $localeService: '@Pimcore\Localization\LocaleService'
+
     InertiaBundle\EventSubscriber\InertiaSubscriber:
         tags:
             - { name: kernel.event_listener, event: kernel.request }
@@ -54,6 +59,7 @@ services:
             - { name: kernel.event_listener, event: kernel.view }
         arguments:
             $inertia: '@inertia.service'
+            $translationService: '@InertiaBundle\Service\TranslationService'
 
     InertiaBundle\Command\InstallAssetsCommand:
         class: InertiaBundle\Command\InstallAssetsCommand
