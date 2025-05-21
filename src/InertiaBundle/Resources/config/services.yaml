@@ -39,6 +39,10 @@ services:
         tags:
             - { name: twig.extension }
 
+    InertiaBundle\Service\ThumbnailGenerator:
+        arguments:
+            $container: '@service_container'
+
     InertiaBundle\Service\TranslationService:
         arguments:
             $translator: '@Pimcore\Translation\Translator'
@@ -77,8 +81,29 @@ services:
         calls:
             - setContainer: [ '@service_container' ]
 
+    InertiaBundle\Controller\AssetApiController:
+        class: InertiaBundle\Controller\AssetApiController
+        tags: [ 'controller.service_arguments' ]
+        calls:
+            - setServiceContainer: [ '@service_container' ]
+            - setThumbnailGenerator: [ '@InertiaBundle\Service\ThumbnailGenerator' ]
+
+    InertiaBundle\Controller\Admin\AssetCacheController:
+        class: InertiaBundle\Controller\Admin\AssetCacheController
+        tags: [ 'controller.service_arguments' ]
+
     InertiaBundle\EventSubscriber\InertiaAdminListener:
         arguments:
             $container: '@service_container'
         tags:
             - { name: kernel.event_listener, event: pimcore.bundle_manager.paths.js, method: addJsPaths }
+
+    InertiaBundle\EventSubscriber\AssetCacheInvalidationListener:
+        tags:
+            - { name: kernel.event_listener }
+            - { name: kernel.event_listener }
+
+    InertiaBundle\Installer:
+        public: true
+        arguments:
+            $bundle: "@=service('kernel').getBundle('InertiaBundle')"

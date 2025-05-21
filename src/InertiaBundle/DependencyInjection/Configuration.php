@@ -15,6 +15,9 @@ class Configuration implements ConfigurationInterface
             'split_view' => true,
             'edit_mode_template' => '@Inertia/edit_mode.html.twig'
         ],
+        'asset' => [
+          'cache_lifetime' => 86400, //24h
+        ],
         'ssr' => [
             'enabled' => false,
             'url' => 'http://localhost:13714/render'

@@ -1,0 +1,9 @@
+inertia_bundle_controller:
+    resource: "../../Controller/"
+    type: attribute
+    prefix: /
+
+inertia_bundle_admin_controller:
+    resource: "../../Controller/Admin"
+    type: attribute
+    prefix: /admin

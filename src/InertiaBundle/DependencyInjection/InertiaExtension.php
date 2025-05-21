@@ -9,6 +9,10 @@ use Symfony\Component\DependencyInjection\Loader\YamlFileLoader;
 
 class InertiaExtension extends Extension
 {
+    public function getAlias(): string
+    {
+        return 'inertia';
+    }
 
     public function load(array $configs, ContainerBuilder $container): void
     {
@@ -28,7 +32,7 @@ class InertiaExtension extends Extension
             new FileLocator(__DIR__ . '/../Resources/config')
         );
 
-        $loader->load('services.yml');
+        $loader->load('services.yaml');
     }
 
     private function buildParameters(ContainerBuilder $container, array $config): void
@@ -64,8 +68,4 @@ class InertiaExtension extends Extension
         ]);
     }
 
-    public function getAlias(): string
-    {
-        return 'inertia';
-    }
 }
