@@ -21,8 +21,6 @@ class InertiaExtension extends Extension
         $this->buildParameters($container, $config);
 
         $this->loadConfiguration($container);
-
-        $this->registerTwigPaths($container);
     }
 
     private function loadConfiguration(ContainerBuilder $container): void
@@ -54,18 +52,4 @@ class InertiaExtension extends Extension
             }
         }
     }
-
-    private function registerTwigPaths(ContainerBuilder $container): void
-    {
-        if (!$container->hasExtension('twig')) {
-            return;
-        }
-
-        $container->prependExtensionConfig('twig', [
-            'paths' => [
-                __DIR__ . '/../Resources/views' => 'Inertia',
-            ]
-        ]);
-    }
-
 }

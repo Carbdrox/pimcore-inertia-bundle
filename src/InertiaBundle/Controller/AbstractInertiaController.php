@@ -110,7 +110,7 @@ abstract class AbstractInertiaController extends AbstractController
 
         if ($this->editmode) {
             $template = $attribute->editTemplate ??
-                ($this->serviceContainer->getParameter('inertia.admin.edit_mode_template') ?? '@Inertia/edit_mode.html.twig');
+                ($this->serviceContainer->getParameter('inertia.admin.edit_mode_template') ?? '@InertiaBundle/edit_mode.html.twig');
 
             return $this->render(
                 $template,

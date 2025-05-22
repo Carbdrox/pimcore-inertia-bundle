@@ -6,6 +6,8 @@ use Pimcore\Extension\Bundle\AbstractPimcoreBundle;
 use InertiaBundle\DependencyInjection\InertiaExtension;
 use Pimcore\Extension\Bundle\Traits\PackageVersionTrait;
 use Pimcore\Extension\Bundle\Installer\InstallerInterface;
+use Symfony\Component\DependencyInjection\ContainerBuilder;
+use InertiaBundle\DependencyInjection\Compiler\TwigLoaderPass;
 use Symfony\Component\DependencyInjection\Extension\ExtensionInterface;
 
 class InertiaBundle extends AbstractPimcoreBundle
@@ -15,6 +17,13 @@ class InertiaBundle extends AbstractPimcoreBundle
     protected function getComposerPackageName(): string
     {
         return 'carbdrox/pimcore-inertia-bundle';
+    }
+
+    public function build(ContainerBuilder $container): void
+    {
+        parent::build($container);
+
+        $container->addCompilerPass(new TwigLoaderPass());
     }
 
     public function getInstaller(): ?InstallerInterface
@@ -27,13 +36,12 @@ class InertiaBundle extends AbstractPimcoreBundle
         return $installer instanceof InstallerInterface ? $installer : null;
     }
 
-    public function getPath(): string
-    {
-        return \dirname(__DIR__);
-    }
-
     public function getContainerExtension(): ?ExtensionInterface
     {
-        return new InertiaExtension();
+        if (!$this->extension) {
+            $this->extension = new InertiaExtension();
+        }
+
+        return $this->extension;
     }
 }

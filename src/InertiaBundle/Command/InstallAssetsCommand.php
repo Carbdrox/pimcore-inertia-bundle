@@ -31,7 +31,7 @@ class InstallAssetsCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $bundle = $this->kernel->getBundle('InertiaBundle');
-        $originDir = $bundle->getPath() . '/Resources/public';
+        $originDir = $bundle->getPath() . '/InertiaBundle/Resources/public';
 
         if (!is_dir($originDir)) {
             $output->writeln(sprintf('No assets found in bundle: <comment>%s</comment>', $bundle->getName()));

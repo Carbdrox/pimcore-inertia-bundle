@@ -38,7 +38,7 @@ class Installer extends SettingsStoreAwareInstaller implements InstallerInterfac
 
         $routingConfig = [
             'inertia_bundle' => [
-                'resource' => '@InertiaBundle/InertiaBundle/Resources/config/routes.yaml'
+                'resource' => '@InertiaBundle/Resources/config/routes.yaml'
             ]
         ];
 

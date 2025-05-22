@@ -13,7 +13,7 @@ class Configuration implements ConfigurationInterface
         'root_view' => 'default/inertia.html.twig',
         'admin' => [
             'split_view' => true,
-            'edit_mode_template' => '@Inertia/edit_mode.html.twig'
+            'edit_mode_template' => '@InertiaBundle/edit_mode.html.twig'
         ],
         'asset' => [
           'cache_lifetime' => 86400, //24h
