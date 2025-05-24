@@ -14,12 +14,14 @@
 
 {% if editmode %}
     <script>
+        const documentId = {{ document.getId() }}
+
         const notifyParentFrame = () => {
-            if (!window.parent || !window.parent.pimcoreEditmodePreviewUpdate) {
+            if (!window.parent || !window.parent.pimcoreEditmodePreviewUpdate || !window.parent.pimcoreEditmodePreviewUpdate[documentId]) {
                 return
             }
 
-            window.parent.pimcoreEditmodePreviewUpdate({{ document.getId() }});
+            window.parent.pimcoreEditmodePreviewUpdate[documentId]()
         }
 
         const debounce = (callback, timeout) => {

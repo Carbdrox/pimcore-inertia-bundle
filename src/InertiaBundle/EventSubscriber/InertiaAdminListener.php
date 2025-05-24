@@ -33,8 +33,8 @@ class InertiaAdminListener implements EventSubscriberInterface
         }
 
         $event->addPaths([
+            '/bundles/inertia/js/admin/editPreviewTab.js',
             '/bundles/inertia/js/admin/inertia.js',
-            '/bundles/inertia/js/admin/editmodePreviewTab.js',
         ]);
     }
 }

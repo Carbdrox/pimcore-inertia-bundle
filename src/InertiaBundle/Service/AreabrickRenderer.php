@@ -94,6 +94,10 @@ readonly class AreabrickRenderer
             $editable instanceof Editable\Video => $this->serializeVideo($editable),
             $editable instanceof Editable\PDF => $this->serializePdf($editable),
 
+            $editable instanceof Editable\Renderlet => $this->serializeRenderlet($editable),
+            $editable instanceof Editable\Snippet => $this->serializeSnippet($editable),
+            $editable instanceof Editable\Block => $this->serializeBlock($editable),
+
             default => $editable->getData(),
         };
     }
@@ -194,6 +198,57 @@ readonly class AreabrickRenderer
             'id' => $pdf->getId(),
             'fullpath' => $pdf->getFullPath(),
         ];
+    }
+
+    private function serializeRenderlet(Editable\Renderlet $editable): ?array
+    {
+        $data = $editable->getData();
+        $element = $editable->getElement();
+
+        if (!$element) {
+            return $data;
+        }
+
+        //@TODO: supply component to render + check if renderlet can be inertia component
+        return array_merge($data, [
+            'id' => $element->getId(),
+            'type' => $element->getType(),
+            'data' => $editable->getData(),
+            'published' => method_exists($element, 'isPublished') ? $element->isPublished() : true,
+        ]);
+    }
+
+    private function serializeSnippet(Editable\Snippet $editable): ?array
+    {
+        $snippet = $editable->getElement();
+        if (!$snippet) {
+            return null;
+        }
+
+        //@TODO: supply component to render + check if snippet can be inertia component
+        return [
+            'id' => $snippet->getId(),
+            'path' => $snippet->getFullPath(),
+            'controller' => $snippet->getController(),
+            'action' => $snippet->getAction(),
+        ];
+    }
+
+    private function serializeBlock(Editable\Block $editable): array
+    {
+        $data = [];
+        $indices = $editable->getIndices();
+
+        foreach ($indices as $index) {
+            $blockData = [];
+            foreach ($editable->getElements() as $name => $child) {
+                $realName = $editable->getName() . ':' . $index . '.' . $name;
+                $blockData[$name] = $this->convertToSerializable($child->getEditable($realName));
+            }
+            $data[] = $blockData;
+        }
+
+        return $data;
     }
 
 }
