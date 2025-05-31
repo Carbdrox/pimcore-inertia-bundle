@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapter 2: Installation and Setup - Pimcore Inertia Bundle</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link href="css/prism/prism.min.css" rel="stylesheet" id="prism-light">
+    <link href="css/prism/prism-tomorrow.min.css" rel="stylesheet" id="prism-dark" disabled>
+
+</head>
+
+<body data-prismjs-copy-timeout="500" data-prismjs-copy="Copy to clipboard" data-prismjs-copy-success="Copied!">
+<button class="mobile-toggle">☰</button>
+<button class="theme-toggle" aria-label="Toggle dark mode">
+    <span class="theme-icon">🌙</span>
+</button>
+
+<nav class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+        <div class="sidebar-title">Pimcore Inertia Bundle</div>
+        <div class="sidebar-subtitle">Developer Documentation</div>
+    </div>
+
+    <div class="nav-menu">
+    </div>
+</nav>
+<div class="container">
+    <main class="main-content">
+        <div class="content-wrapper">
+            <h1 id="chapter2">Chapter 2: Installation and Setup</h1>
+
+            <h2 id="bundle-installation">2.1 Bundle Installation</h2>
+
+            <h3>Step 1: Install via Composer</h3>
+            <code>composer require carbdrox/pimcore-inertia-bundle</code>
+
+            <h3>Step 2: Install the Bundle</h3>
+            <p>Use Pimcore's bundle installation command:</p>
+            <code>bin/console pimcore:bundle:install InertiaBundle</code>
+
+            <p>This command will:</p>
+            <ul>
+                <li>Register the bundle in your Pimcore installation</li>
+                <li>Set up necessary database tables (if any)</li>
+                <li>Configure default settings</li>
+            </ul>
+
+            <h3>Step 3: Install Admin Assets</h3>
+            <p>Install the bundle's admin interface assets:</p>
+            <code>bin/console inertia:assets:install</code>
+            <p>This command installs the administrative interface components for managing Inertia.js within the Pimcore admin panel.</p>
+
+            <h3>Step 4: Clear Cache</h3>
+            <code>bin/console cache:clear</code>
+
+            <h2 id="bundle-configuration">2.2 Bundle Configuration</h2>
+
+            <h3>Basic Configuration</h3>
+            <p>Create the bundle configuration file at <code>config/packages/inertia.yaml</code>:</p>
+
+            <div class="code-block">
+                <h4>config/packages/inertia.yaml</h4>
+                <pre class="language-yaml"><code>inertia:
+    root_view: 'default/inertia.html.twig'
+    admin:
+        split_view: true
+        edit_mode_template: '@InertiaBundle/edit_mode.html.twig'
+    asset:
+        cache_lifetime: 86400
+    ssr:
+        enabled: false
+        url: 'http://localhost:13714/render'
+    csrf:
+        enabled: false
+        header_name: 'X-XSRF-TOKEN'
+        cookie_name: 'XSRF-TOKEN'
+        expire: 0
+        path: '/'
+        domain: null
+        secure: false
+        raw: false
+        samesite: 'lax'</code></pre>
+            </div>
+
+            <h3>Configuration Options Explained</h3>
+
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <div class="feature-title">📄 Root View Configuration</div>
+                    <div class="feature-description">
+                        <code>root_view: 'default/inertia.html.twig'</code><br>
+                        Path to your main template file.
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-title">⚙️ Admin Interface Settings</div>
+                    <div class="feature-description">
+                        <code>split_view: true</code> - Enable split view in Pimcore admin<br>
+                        <code>edit_mode_template</code> - Template for edit mode
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-title">💾 Asset Management</div>
+                    <div class="feature-description">
+                        <code>cache_lifetime: 86400</code><br>
+                        Cache lifetime in seconds (24 hours)
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-title">🖥️ Server-Side Rendering (SSR)</div>
+                    <div class="feature-description">
+                        <code>enabled: false</code> - Enable/disable SSR<br>
+                        <code>url</code> - SSR server URL
+                    </div>
+                </div>
+            </div>
+
+            <h2 id="frontend-setup">2.3 Frontend Setup</h2>
+
+            <h3>Step 1: Install Dependencies</h3>
+            <div class="code-block">
+                    <pre class="language-bash"><code># Core Inertia.js and Vue dependencies
+npm install @inertiajs/vue3 vue@next
+
+# Development dependencies
+npm install --save-dev vite @vitejs/plugin-vue pimcore-vite-plugin
+
+# Optional: TypeScript support
+npm install --save-dev typescript vue-tsc @types/node</code></pre>
+            </div>
+
+            <h3>Step 2: Configure Vite with Pimcore Plugin</h3>
+            <p>Create <code>vite.config.js</code> in your project root:</p>
+
+            <div class="code-block">
+                <h4>vite.config.js</h4>
+                <pre class="language-javascript"><code>import {defineConfig} from 'vite';
+import Pimcore from 'pimcore-vite-plugin';
+import vue from '@vitejs/plugin-vue'
+
+export default defineConfig({
+    plugins: [
+        Pimcore({
+            ssr: 'assets/js/ssr.js',
+            reload: [
+                'assets/**',
+                'templates/**/*.twig',
+                'src/Controller/**/*Controller.php'
+            ],
+            input: {
+                'js/app': 'assets/js/app.js',
+                'css/app': 'assets/scss/app.scss'
+            }
+        }),
+        vue({
+            template: {
+                transformAssetUrls: {
+                    base: null,
+                    includeAbsolute: false
+                }
+            }
+        })
+    ],
+    server: {
+        hmr: {
+            protocol: 'wss',
+            host: process.env.VIRTUAL_HOST,
+            overlay: false
+        },
+        host: '0.0.0.0',
+        strictPort: true,
+        port: 5173,
+    }
+});</code></pre>
+            </div>
+
+            <h2 id="root-template">2.4 Root Template Setup</h2>
+            <p>Create your root template at <code>templates/default/inertia.html.twig</code>:</p>
+
+            <div class="code-block">
+                <h4>templates/default/inertia.html.twig</h4>
+                <pre class="language-twig"><code>&lt;!DOCTYPE html&gt;
+&lt;html lang="en"&gt;
+&lt;head&gt;
+    &lt;meta charset="UTF-8"&gt;
+    &lt;title&gt;Example&lt;/title&gt;
+    &lt;link rel="stylesheet" href="{{ vite('assets/scss/app.scss') }}"/&gt;
+
+    {{ inertia_head() }}
+&lt;/head&gt;
+
+&lt;body&gt;
+    {% if viewData | length  %}
+        {{ dump(viewData) }}
+    {% endif %}
+
+    &lt;div id="site"&gt;
+        {{ inertia() }}
+    &lt;/div&gt;
+
+    &lt;script type="module" defer src="{{ vite('assets/js/app.js') }}"&gt;&lt;/script&gt;
+    {{ viteReload(editmode) | raw }}
+&lt;/body&gt;
+&lt;/html&gt;</code></pre>
+            </div>
+
+            <h3>Template Functions Explained</h3>
+            <ul>
+                <li><code>{{ vite('path') }}</code>: Resolves Vite assets (CSS/JS)</li>
+                <li><code>{{ inertia_head() }}</code>: Injects Inertia head elements (title, meta tags)</li>
+                <li><code>{{ inertia() }}</code>: Renders the Inertia app container</li>
+                <li><code>{{ viteReload(editmode) }}</code>: Enables hot reload in development mode</li>
+            </ul>
+
+            <h2 id="javascript-setup">2.5 JavaScript Application Setup</h2>
+
+            <h3>Main Application Entry Point</h3>
+            <p>Create <code>assets/js/app.js</code>:</p>
+
+            <div class="code-block">
+                <h4>assets/js/app.js</h4>
+                <pre class="language-javascript"><code>import { createInertiaApp } from '@inertiajs/vue3';
+import { createSSRApp, h} from 'vue';
+import { translations } from './stores/translations'
+import translator from "./plugin/translator.js";
+import assets from "./plugin/assets.js";
+
+const appName = import.meta.env.VITE_APP_NAME || 'Pimcore';
+
+const resolvePageComponent = (path, pages) => {
+    for (const p of (Array.isArray(path) ? path : [path])) {
+        const page = pages[p];
+        if (typeof page === 'undefined') {
+            continue;
+        }
+        return typeof page === 'function' ? page() : page;
+    }
+    throw new Error(`Page not found: ${path}`);
+}
+
+createInertiaApp({
+    title: (title) => `${title} - ${appName}`,
+    resolve: (name) =>
+        resolvePageComponent(
+            `./pages/${name}.vue`,
+            import.meta.glob('./pages/**/*.vue')
+        ),
+    setup({ el, App, props, plugin }) {
+
+        translations.commit('setTranslations', props.initialPage?.props?.translations ?? [])
+        const inertiaApp = createSSRApp({ render: () => h(App, props) })
+            .use(plugin).use(translations).use(translator).use(assets)
+
+        return inertiaApp.mount(el)
+    }
+});</code></pre>
+            </div>
+
+            <h3>Server-Side Rendering Setup</h3>
+            <p>Create <code>assets/js/ssr.js</code>:</p>
+
+            <div class="code-block">
+                <h4>assets/js/ssr.js</h4>
+                <pre class="language-javascript"><code>import { createInertiaApp } from '@inertiajs/vue3'
+import createServer from '@inertiajs/vue3/server'
+import { renderToString } from '@vue/server-renderer'
+import { createSSRApp, h } from 'vue'
+import {translations} from "./stores/translations.js";
+import translator from "./plugin/translator.js";
+import assets from "./plugin/assets.js";
+
+const resolvePageComponent = (path, pages) => {
+    for (const p of (Array.isArray(path) ? path : [path])) {
+        const page = pages[p];
+        if (typeof page === 'undefined') {
+            continue;
+        }
+        return typeof page === 'function' ? page() : page;
+    }
+    throw new Error(`Page not found: ${path}`);
+}
+
+createServer(page =>
+    createInertiaApp({
+        page,
+        render: renderToString,
+        resolve: (name) =>
+            resolvePageComponent(
+                `./pages/${name}.vue`,
+                import.meta.glob('./pages/**/*.vue')
+            ),
+        setup({ App, props, plugin }) {
+
+            translations.commit('setTranslations', props.initialPage?.props?.translations ?? [])
+            return createSSRApp({render: () => h(App, props)})
+                .use(plugin).use(translations).use(translator).use(assets)
+        }
+    })
+)</code></pre>
+            </div>
+
+            <h2 id="package-scripts">2.6 Package Scripts</h2>
+            <p>Add these scripts to your <code>package.json</code>:</p>
+
+            <div class="code-block">
+                <h4>package.json</h4>
+                <pre class="language-json"><code>{
+    "scripts": {
+        "dev": "vite",
+        "build": "vite build",
+        "ssr:build": "vite build --ssr assets/js/ssr.js",
+        "ssr:start": "node storage/ssr/ssr.js",
+        "preview": "vite preview"
+    }
+}</code></pre>
+            </div>
+
+            <h2 id="directory-structure">2.7 Directory Structure</h2>
+            <p>Your project should have the following structure:</p>
+
+            <div class="code-block">
+                    <pre><code>project-root/
+├── assets/
+│   ├── js/
+│   │   ├── app.js
+│   │   ├── ssr.js
+│   │   ├── pages/          # Vue components
+│   │   ├── stores/         # Vuex/Pinia stores
+│   │   └── plugin/         # Vue plugins
+│   └── scss/
+│       └── app.scss
+├── templates/
+│   └── default/
+│       └── inertia.html.twig
+├── config/
+│   └── packages/
+│       └── inertia.yaml
+├── vite.config.js
+└── package.json</code></pre>
+            </div>
+
+            <h2 id="development-workflow">2.8 Development Workflow</h2>
+
+            <h3>Start Development Server</h3>
+            <div class="code-block">
+                    <pre class="language-bash"><code># Terminal 1: Start Vite development server
+npm run dev
+
+# Terminal 2 (optional): Start SSR server for SSR development
+npm run ssr:build && npm run ssr:start</code></pre>
+            </div>
+
+            <h3>Build for Production</h3>
+            <div class="code-block">
+                    <pre class="language-bash"><code># Build client assets
+npm run build
+
+# Build SSR assets (if using SSR)
+npm run ssr:build</code></pre>
+            </div>
+
+            <h2 id="verification">2.9< Verification</h2>
+
+            <h3>Test Installation</h3>
+            <p>Create a simple test to verify everything is working:</p>
+            <ol>
+                <li>Create a test controller (covered in next chapter)</li>
+                <li>Create a test Vue component in <code>assets/js/pages/Test.vue</code></li>
+                <li>Visit the test route in your browser</li>
+            </ol>
+
+            <div class="next-chapter">
+                <h3>What's next?</h3>
+                <p>With the bundle installed and configured, you're ready to start developing Inertia.js applications within Pimcore.</p>
+                <p><strong>Next Chapter:</strong> Configuration - Deep dive into advanced configuration options and customization.</p>
+            </div>
+        </div>
+    </main>
+</div>
+
+<script src="js/prism/prism-core.min.js"></script>
+<script src="js/prism/prism-autoloader.min.js"></script>
+<script src="js/prism/prism-normalize-whitespace.min.js"></script>
+
+<script src="js/navigation.js"></script>
+<script src="js/theme.js"></script>
+</body>
+</html>

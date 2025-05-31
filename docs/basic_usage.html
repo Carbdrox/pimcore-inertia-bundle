@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapter 3: Basic Usage - Pimcore Inertia Bundle</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link href="css/prism/prism.min.css" rel="stylesheet" id="prism-light">
+    <link href="css/prism/prism-tomorrow.min.css" rel="stylesheet" id="prism-dark" disabled>
+
+</head>
+
+<body data-prismjs-copy-timeout="500" data-prismjs-copy="Copy to clipboard" data-prismjs-copy-success="Copied!">
+<button class="mobile-toggle">☰</button>
+<button class="theme-toggle" aria-label="Toggle dark mode">
+    <span class="theme-icon">🌙</span>
+</button>
+
+<nav class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+        <div class="sidebar-title">Pimcore Inertia Bundle</div>
+        <div class="sidebar-subtitle">Developer Documentation</div>
+    </div>
+
+    <div class="nav-menu">
+    </div>
+</nav>
+<div class="container">
+    <main class="main-content">
+        <div class="content-wrapper">
+            <h1 id="chapter3">Chapter 3: Basic Usage</h1>
+
+            <h2 id="understanding-flow">3.1 Understanding the Flow</h2>
+            <p>Before diving into code examples, it's important to understand how Pimcore Inertia Bundle works:</p>
+
+            <ol>
+                <li><strong>Request:</strong> User navigates to a URL</li>
+                <li><strong>Pimcore Controller:</strong> Processes the request like a normal Pimcore controller</li>
+                <li><strong>Inertia Response:</strong> Instead of returning a Twig template, returns JSON data</li>
+                <li><strong>Frontend:</strong> Vue.js receives the data and renders the appropriate component</li>
+                <li><strong>Client-side Navigation:</strong> Subsequent navigation happens without full page reloads</li>
+            </ol>
+
+            <h2 id="controller-methods">3.2 Controller Implementation Methods</h2>
+            <p>The Pimcore Inertia Bundle provides three main approaches for creating controllers:</p>
+
+            <div class="config-options">
+                <div class="config-card">
+                    <div class="config-card-header">
+                        <div class="config-card-icon">🔧</div>
+                        <h4 class="config-card-title">Autowired Inertia Service</h4>
+                    </div>
+                    <div class="config-card-content">
+                        <div class="config-description">Traditional approach using dependency injection</div>
+                    </div>
+                </div>
+
+                <div class="config-card">
+                    <div class="config-card-header">
+                        <div class="config-card-icon">🏷️</div>
+                        <h4 class="config-card-title">InertiaResponse Attribute</h4>
+                    </div>
+                    <div class="config-card-content">
+                        <div class="config-description">Modern PHP 8+ attribute-based approach</div>
+                    </div>
+                </div>
+
+                <div class="config-card">
+                    <div class="config-card-header">
+                        <div class="config-card-icon">📦</div>
+                        <h4 class="config-card-title">AbstractInertiaController</h4>
+                    </div>
+                    <div class="config-card-content">
+                        <div class="config-description">Extended base controller with built-in methods</div>
+                    </div>
+                </div>
+            </div>
+
+            <h2 id="method-autowired">3.3 Method 1: Autowired Inertia Service</h2>
+
+            <h3>Basic Controller with Autowired Service</h3>
+            <p>The most straightforward approach is to inject the Inertia service into your controllers:</p>
+
+            <div class="code-block">
+                <h4>src/Controller/HomeController.php</h4>
+                <pre class="language-php"><code>
+                    &lt;?php
+
+namespace App\Controller;
+
+use Pimcore\Controller\FrontendController;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Routing\Annotation\Route;
+use Carbdrox\InertiaBundle\Service\InertiaInterface;
+
+class HomeController extends FrontendController
+{
+    #[Route('/', name: 'home')]
+    public function index(InertiaInterface $inertia): Response
+    {
+        return $inertia->render('Home', [
+            'title' => 'Welcome to Pimcore Inertia',
+            'message' => 'This page is rendered with Vue.js!',
+            'timestamp' => date('Y-m-d H:i:s')
+        ]);
+    }
+
+    public function defaultAction(
+        Request $request,
+        InertiaInterface $inertia
+    ): Response {
+        $document = $this->getDocument();
+
+        return $inertia->render('DocumentPage', [
+            'document' => [
+                'id' => $document->getId(),
+                'title' => $document->getTitle(),
+                'description' => $document->getDescription(),
+                'content' => []
+            ],
+            'breadcrumb' => $this->getBreadcrumb($document),
+            'navigation' => $this->getNavigation()
+        ]);
+    }
+
+    private function getNavigation(): array
+    {
+        $nav = Document::getById(1);
+        return $this->buildNavigationTree($nav);
+    }
+
+    private function buildNavigationTree(Document $parent): array
+    {
+        $children = [];
+        foreach ($parent->getChildren() as $child) {
+            if ($child->isPublished() && !$child->getProperty('navigation_hide')) {
+                $children[] = [
+                    'title' => $child->getTitle(),
+                    'path' => $child->getFullPath(),
+                    'children' => $this->buildNavigationTree($child)
+                ];
+            }
+        }
+        return $children;
+    }
+
+    private function getBreadcrumb(Document $document): array
+    {
+        $breadcrumb = [];
+        $current = $document;
+
+        while ($current && $current->getId() !== 1) {
+            $breadcrumb[] = [
+                'title' => $current->getTitle(),
+                'path' => $current->getFullPath()
+            ];
+            $current = $current->getParent();
+        }
+
+        return array_reverse($breadcrumb);
+    }
+}</code></pre>
+            </div>
+
+            <h2 id="method-attribute">3.4 Method 2: InertiaResponse Attribute</h2>
+
+            <h3>Using the #[InertiaResponse] Attribute</h3>
+            <p>The #[InertiaResponse] attribute provides a clean, declarative way to mark controller actions for Inertia rendering:</p>
+
+            <div class="code-block">
+                <h4>src/Controller/BlogController.php</h4>
+                <pre class="language-php"><code>&lt;?php
+
+namespace App\Controller;
+
+use Pimcore\Controller\FrontendController;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\Routing\Annotation\Route;
+use Carbdrox\InertiaBundle\Attribute\InertiaResponse;
+
+class BlogController extends FrontendController
+{
+    #[Route('/blog', name: 'blog_list')]
+    #[InertiaResponse('Blog/List')]
+    public function list(Request $request): array
+    {
+        $page = (int) $request->query->get('page', 1);
+        $posts = $this->getBlogPosts($page);
+
+        return [
+            'posts' => $posts,
+            'pagination' => $this->getPagination($page),
+            'categories' => $this->getBlogCategories()
+        ];
+    }
+
+    private function getBlogCategories(): array
+    {
+        return [];
+    }
+
+    private function getBlogPosts(int $page): array
+    {
+        return [];
+    }
+
+    private function getPagination(int $page): array
+    {
+        return [];
+    }
+}</code></pre>
+            </div>
+
+            <h2 id="method-abstract">3.5 Method 3: AbstractInertiaController</h2>
+
+            <h3>Extending AbstractInertiaController</h3>
+            <p>The AbstractInertiaController provides built-in methods and utilities for Inertia responses:</p>
+
+            <div class="code-block">
+                <h4>src/Controller/NewsController.php</h4>
+                <pre class="language-php"><code>&lt;?php
+
+namespace App\Controller;
+
+use Carbdrox\InertiaBundle\Controller\AbstractInertiaController;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Routing\Annotation\Route;
+
+class NewsController extends AbstractInertiaController
+{
+    #[Route('/news', name: 'news_list')]
+    public function list(Request $request): Response
+    {
+        $page = (int) $request->query->get('page', 1);
+
+        return $this->inertia('News/List', [
+            'articles' => $this->getNewsArticles($page),
+            'pagination' => $this->getPagination($page),
+            'categories' => $this->getNewsCategories()
+        ]);
+    }
+
+    #[Route('/events', name: 'event_list')]
+    #[InertiaResponse('Events/List')]
+    public function events(Request $request): array
+    {
+        $page = (int) $request->query->get('page', 1);
+
+        return [
+            'events' => $this->getEvents(),
+            'pagination' => $this->getPagination($page),
+            'categories' => $this->getEventCategories()
+        ];
+    }
+
+    private function getNewsArticles(int $page): array
+    {
+        return [];
+    }
+
+    private function getNewsCategories(): array
+    {
+        return [];
+    }
+
+    private function getEvents(): array
+    {
+        return [];
+    }
+
+    private function getEventCategories(): array
+    {
+        return [];
+    }
+
+    private function getPagination(int $page): array
+    {
+        return [];
+    }
+}</code></pre>
+            </div>
+
+            <h2 id="areabricks">3.6 Working with Pimcore Areabricks</h2>
+
+            <h3>Understanding Areabricks in Inertia Context</h3>
+            <p>Pimcore Areabricks are reusable content blocks that can be added to documents through the admin interface. When using Inertia.js, we need a special approach to maintain the native Pimcore editables functionality while still benefiting from Vue.js components for the frontend display.</p>
+
+            <p>The Pimcore Inertia Bundle provides seamless integration between Areabricks and Inertia.js through specialized templates and the split-view functionality.</p>
+
+            <h3>Enabling Split View Mode</h3>
+            <p>First, enable the split view in your configuration:</p>
+
+            <div class="code-block">
+                <h4>config/packages/inertia.yaml</h4>
+                <pre class="language-yaml"><code># config/packages/inertia.yaml
+inertia:
+    admin:
+        split_view: true
+        edit_mode_template: '@InertiaBundle/edit_mode.html.twig'</code></pre>
+            </div>
+
+            <p>This configuration provides:</p>
+            <ul>
+                <li><span class="config-key">split_view: true</span> - Adds a new "Preview" tab in the Pimcore admin document editor</li>
+                <li><span class="config-key">edit_mode_template</span> - Specifies the template used for edit mode rendering</li>
+            </ul>
+
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <div class="feature-title">📝 Edit Tab</div>
+                    <div class="feature-description">Native Pimcore editables interface for content management</div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-title">👀 Preview Tab</div>
+                    <div class="feature-description">Live preview of the Inertia.js frontend</div>
+                </div>
+            </div>
+
+            <h3>Method 1: Manual Areabrick Implementation</h3>
+
+            <h4>Creating the Areabrick Class</h4>
+            <div class="code-block">
+                <h4>src/Document/Areabrick/ContentBlockBrick.php</h4>
+                <pre class="language-php"><code>&lt;?php
+namespace App\Document\Areabrick;
+
+use Pimcore\Extension\Document\Areabrick\AbstractTemplateAreabrick;
+use Pimcore\Model\Document\Editable\Area\Info;
+use Symfony\Component\HttpFoundation\Response;
+
+class ContentBlockBrick extends AbstractTemplateAreabrick
+{
+    public function getName(): string
+    {
+        return 'Content Block';
+    }
+
+    public function getDescription(): string
+    {
+        return 'A flexible content block with title, text and image';
+    }
+
+    public function action(Info $info): ?Response
+    {
+        $editmode = $info->getRequest()->get('pimcore_editmode');
+
+        if ($editmode) {
+            return $this->renderTemplate('areas/content_block/edit.html.twig', [
+                'info' => $info,
+                'editmode' => true
+            ]);
+        }
+
+        $data = [
+            'title' => $info->getEditable('title')?->getValue() ?? '',
+            'text' => $info->getEditable('text')?->getValue() ?? '',
+            'layout' => $info->getEditable('layout')?->getValue() ?? 'default',
+            'background_color' => $info->getEditable('background_color')?->getValue() ?? 'white'
+        ];
+
+        $info->setParam('inertia_data', $data);
+        return null;
+    }
+}</code></pre>
+            </div>
+
+            <h4>Edit Mode Template</h4>
+            <p>Create the edit mode template at <span class="config-key">templates/areas/content_block/edit.html.twig</span>:</p>
+
+            <div class="code-block">
+                <h4>templates/areas/content_block/edit.html.twig</h4>
+                <pre class="language-twig"><code>
+&lt;div class="areabrick-edit content-block-edit"&gt;
+    &lt;div class="row"&gt;
+        &lt;div class="col-md-12"&gt;
+            &lt;h4&gt;Content Block Settings&lt;/h4&gt;
+        &lt;/div&gt;
+    &lt;/div&gt;
+
+    &lt;div class="row"&gt;
+        &lt;div class="col-md-6"&gt;
+            &lt;div class="form-group"&gt;
+                &lt;label&gt;Title&lt;/label&gt;
+                {{ pimcore_input('title', {
+                'placeholder': 'Enter title...',
+                'class': 'form-control'
+            }) }}
+            &lt;/div&gt;
+        &lt;/div&gt;
+
+        &lt;div class="col-md-6"&gt;
+            &lt;div class="form-group"&gt;
+                &lt;label&gt;Layout&lt;/label&gt;
+                {{ pimcore_select('layout', {
+                'store': [
+                    ['default', 'Default'],
+                    ['centered', 'Centered'],
+                    ['left-aligned', 'Left Aligned'],
+                    ['right-aligned', 'Right Aligned']
+                ],
+                'class': 'form-control'
+            }) }}
+            &lt;/div&gt;
+        &lt;/div&gt;
+    &lt;/div&gt;
+
+    &lt;div class="row"&gt;
+        &lt;div class="col-md-8"&gt;
+            &lt;div class="form-group"&gt;
+                &lt;label&gt;Text Content&lt;/label&gt;
+                {{ pimcore_wysiwyg('text', {
+                'height': 200,
+                'toolbarGroups': [
+                    {'name': 'basicstyles', 'groups': ['basicstyles']},
+                    {'name': 'paragraph', 'groups': ['list', 'blocks']},
+                    {'name': 'links'},
+                    {'name': 'insert'}
+                ]
+            }) }}
+            &lt;/div&gt;
+        &lt;/div&gt;
+
+        &lt;div class="col-md-4"&gt;
+            &lt;div class="form-group"&gt;
+                &lt;label&gt;Image&lt;/label&gt;
+                {{ pimcore_image('image', {
+                'thumbnail': 'content_medium',
+                'dropClass': 'drop-zone'
+            }) }}
+            &lt;/div&gt;
+
+            &lt;div class="form-group"&gt;
+                &lt;label&gt;Background Color&lt;/label&gt;
+                {{ pimcore_select('background_color', {
+                'store': [
+                    ['white', 'White'],
+                    ['light-gray', 'Light Gray'],
+                    ['blue', 'Blue'],
+                    ['dark', 'Dark']
+                ],
+                'class': 'form-control'
+            }) }}
+            &lt;/div&gt;
+        &lt;/div&gt;
+    &lt;/div&gt;
+&lt;/div&gt;</code></pre>
+            </div>
+
+            <h4>Frontend Component Integration</h4>
+            <p>In your document controller, handle the areabrick data:</p>
+
+            <div class="code-block">
+                <h4>Document Controller Integration</h4>
+                <pre class="language-php"><code>&lt;?php
+
+public function defaultAction(Request $request, InertiaInterface $inertia): Response
+{
+    $document = $this->getDocument();
+
+    return $inertia->render('DocumentPage', [
+        'document' => [
+            'id' => $document->getId(),
+            'title' => $document->getTitle(),
+            'content' => $this->processDocumentElements($document)
+        ]
+    ]);
+}
+
+private function processDocumentElements(Document $document): array
+{
+    $elements = [];
+
+    foreach ($document->getElements() as $name => $element) {
+        if ($element instanceof \Pimcore\Model\Document\Editable\Areablock) {
+            $elements[$name] = $this->processAreablock($element);
+        } else {
+            $elements[$name] = [
+                'type' => $element->getType(),
+                'data' => $element->frontend()
+            ];
+        }
+    }
+
+    return $elements;
+}
+
+private function processAreablock($areablock): array
+{
+    $areas = [];
+
+    foreach ($areablock->getElements() as $area) {
+        $areas[] = [
+            'type' => $area['type'],
+            'data' => $area['inertia_data'] ?? [],
+            'index' => $area['index']
+        ];
+    }
+
+    return [
+        'type' => 'areablock',
+        'areas' => $areas
+    ];
+}</code></pre>
+            </div>
+
+            <h3>Method 2: Using #[InertiaAreabrick] Attribute</h3>
+
+            <h4>Attribute-based Areabrick</h4>
+            <div class="code-block">
+                <h4>src/Document/Areabrick/EditableTest.php</h4>
+                <pre class="language-php"><code>&lt;?php
+
+namespace App\Document\Areabrick;
+
+use Pimcore\Extension\Document\Areabrick\AreabrickInterface;
+use Pimcore\Extension\Document\Areabrick\AbstractTemplateAreabrick;
+
+class EditableTest extends AbstractTemplateAreabrick implements AreabrickInterface
+{
+    public function getName(): string
+    {
+        return 'editable_test';
+    }
+
+    public function getDescription(): string
+    {
+        return 'Test areabrick for Inertia integration';
+    }
+}</code></pre>
+            </div>
+
+            <h4>Controller Integration</h4>
+            <div class="code-block">
+                <h4>src/Controller/InertiaController.php</h4>
+                <pre class="language-php"><code>&lt;?php
+
+namespace App\Controller;
+
+use InertiaBundle\Support\InertiaAreabrick;
+use InertiaBundle\Support\InertiaResponse;
+use InertiaBundle\Controller\AbstractInertiaController;
+
+class InertiaController extends AbstractInertiaController
+{
+    #[InertiaResponse('areabrickDefault')]
+    #[InertiaAreabrick(['content' => ['allowed' => ['editable_test']]])]
+    protected function defaultAction(): array
+    {
+        return [
+            'content' => $this->bricks
+        ];
+    }
+}</code></pre>
+            </div>
+
+            <h3>Benefits of Split View Mode</h3>
+            <p>The split view mode provides several advantages:</p>
+
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <div class="feature-title">🎛️ Native Editing Experience</div>
+                    <div class="feature-description">Content editors can use familiar Pimcore editables</div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-title">👁️ Live Preview</div>
+                    <div class="feature-description">See changes instantly in the Inertia.js frontend</div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-title">🔄 Context Switching</div>
+                    <div class="feature-description">Easy switching between edit and preview modes</div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-title">⚡ Real-time Updates</div>
+                    <div class="feature-description">Changes reflect immediately without page reloads</div>
+                </div>
+            </div>
+
+            <div class="next-chapter">
+                <h3>What's next?</h3>
+                <p>You now understand the three main approaches to implementing controllers with the Pimcore Inertia Bundle and how to work with Areabricks in an Inertia.js context.</p>
+                <p><strong>Next Chapter:</strong> Advanced Features - Learn about form handling, validation, asset management, and performance optimization techniques.</p>
+            </div>
+        </div>
+    </main>
+</div>
+
+<script src="js/prism/prism-core.min.js"></script>
+<script src="js/prism/prism-autoloader.min.js"></script>
+<script src="js/prism/prism-normalize-whitespace.min.js"></script>
+
+<script src="js/navigation.js"></script>
+<script src="js/theme.js"></script>
+</body>
+</html>
+

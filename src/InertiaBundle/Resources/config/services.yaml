@@ -92,6 +92,10 @@ services:
         class: InertiaBundle\Controller\Admin\AssetCacheController
         tags: [ 'controller.service_arguments' ]
 
+    InertiaBundle\Controller\Admin\DocumentationController:
+        class: InertiaBundle\Controller\Admin\DocumentationController
+        tags: [ 'controller.service_arguments' ]
+
     InertiaBundle\EventSubscriber\InertiaAdminListener:
         arguments:
             $container: '@service_container'
